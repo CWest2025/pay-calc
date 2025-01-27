@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pay Calculator</title>
+    <style>
+        body {
+            font-family: -apple-system, system-ui, sans-serif;
+            padding: 20px;
+            max-width: 500px;
+            margin: 0 auto;
+            background: #f5f5f7;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .input-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            margin-bottom: 5px;
+        }
+        .hint {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 15px;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: 500;
+            color: white;
+            margin-bottom: 10px;
+            cursor: pointer;
+        }
+        .save-btn {
+            background-color: #34c759;
+        }
+        .clear-btn {
+            background-color: #ff3b30;
+        }
+        .calc-btn {
+            background-color: #007aff;
+        }
+        .divider {
+            height: 1px;
+            background: #ddd;
+            margin: 20px 0;
+        }
+        .results {
+            background: #f8f8f8;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+        .result-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #ddd;
+        }
+        .result-row:last-child {
+            border-bottom: none;
+            padding-top: 15px;
+            margin-top: 5px;
+            border-top: 2px solid #ddd;
+            font-weight: bold;
+        }
+        .negative {
+            color: #ff3b30;
+        }
+        .positive {
+            color: #34c759;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Pay Calculator</h1>
+        
+        <div class="input-group">
+            <label>Hourly Rate ($)</label>
+            <input type="number" id="regularRate" step="0.01" placeholder="Enter hourly rate">
+            <div class="hint">Overtime rate is automatically calculated at 1.5× hourly rate</div>
+            <button class="save-btn" onclick="saveRate()">Save Rate</button>
+            <button class="clear-btn" onclick="clearRate()">Clear Saved Rate</button>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="input-group">
+            <label>Hours Worked</label>
+            <input type="number" id="hours" step="0.5" value="40" placeholder="Enter hours">
+            <button class="calc-btn" onclick="calculatePay()">Calculate Pay</button>
+        </div>
+
+        <div class="results">
+            <div class="result-row">
+                <span>Regular Pay</span>
+                <span id="regularPay">$0.00</span>
+            </div>
+            <div class="result-row">
+                <span>Overtime Pay</span>
+                <span id="overtimePay">$0.00</span>
+            </div>
+            <div class="result-row">
+                <span>Gross Pay</span>
+                <span id="grossPay">$0.00</span>
+            </div>
+            <div class="result-row">
+                <span>Taxes</span>
+                <span id="taxes" class="negative">-$0.00</span>
+            </div>
+            <div class="result-row">
+                <span>Deductions</span>
+                <span id="percentDeductions" class="negative">-$0.00</span>
+            </div>
+            <div class="result-row">
+                <span>Other Deductions</span>
+                <span id="staticDeduction" class="negative">-$80.31</span>
+            </div>
+            <div class="result-row">
+                <span>Net Pay</span>
+                <span id="netPay" class="positive">$0.00</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Load saved rate on startup
+        window.onload = function() {
+            const savedRate = localStorage.getItem('hourlyRate');
+            if (savedRate) {
+                document.getElementById('regularRate').value = savedRate;
+            }
+        };
+
+        function saveRate() {
+            const rate = document.getElementById('regularRate').value;
+            if (rate) {
+                localStorage.setItem('hourlyRate', rate);
+                alert('Rate saved!');
+            } else {
+                alert('Please enter a rate first');
+            }
+        }
+
+        function clearRate() {
+            localStorage.removeItem('hourlyRate');
+            document.getElementById('regularRate').value = '';
+            alert('Rate cleared!');
+        }
+
+        function formatMoney(amount) {
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD'
+            }).format(amount);
+        }
+
+        function calculatePay() {
+            const regularRate = parseFloat(document.getElementById('regularRate').value) || 0;
+            const overtimeRate = regularRate * 1.5;
+            const hours = parseFloat(document.getElementById('hours').value) || 0;
+
+            if (!regularRate) {
+                alert('Please enter your hourly rate');
+                return;
+            }
+
+            const regularHours = Math.min(hours, 40);
+            const overtimeHours = Math.max(0, hours - 40);
+            
+            const regularPay = regularHours * regularRate;
+            const overtimePay = overtimeHours * overtimeRate;
+            const grossPay = regularPay + overtimePay;
+            
+            const taxes = grossPay * 0.195;
+            const percentageDeductions = grossPay * 0.0756;
+            const staticDeduction = 80.31;
+            const netPay = grossPay - taxes - percentageDeductions - staticDeduction;
+            
+            document.getElementById('regularPay').textContent = formatMoney(regularPay);
+            document.getElementById('overtimePay').textContent = formatMoney(overtimePay);
+            document.getElementById('grossPay').textContent = formatMoney(grossPay);
+            document.getElementById('taxes').textContent = `-${formatMoney(taxes)}`;
+            document.getElementById('percentDeductions').textContent = `-${formatMoney(percentageDeductions)}`;
+            document.getElementById('staticDeduction').textContent = `-${formatMoney(staticDeduction)}`;
+            document.getElementById('netPay').textContent = formatMoney(netPay);
+        }
+    </script>
+</body>
+</html>
